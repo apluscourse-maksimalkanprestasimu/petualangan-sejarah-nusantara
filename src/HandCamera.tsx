@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 
-type Props = { onPoint:(point:{x:number;y:number}|null)=>void; onStatus:(status:string)=>void; enabled:boolean; mirrored?:boolean };
-export default function HandCamera({onPoint,onStatus,enabled,mirrored=true}:Props) {
+type Props = { onPoint:(point:{x:number;y:number}|null)=>void; onStatus:(status:string)=>void; enabled:boolean; mirrored?:boolean; shouldStop?:boolean };
+export default function HandCamera({onPoint,onStatus,enabled,mirrored=true,shouldStop=false}:Props) {
   const videoRef=useRef<HTMLVideoElement>(null);
   const streamRef=useRef<MediaStream|null>(null);
   const landmarkerRef=useRef<HandLandmarker|null>(null);
@@ -65,6 +65,7 @@ export default function HandCamera({onPoint,onStatus,enabled,mirrored=true}:Prop
     } finally { setLoading(false); }
   },[mirrored,onPoint,onStatus,stop]);
 
+  useEffect(()=>{if(shouldStop&&cameraOn)stop();},[shouldStop,cameraOn,stop]);
   useEffect(()=>()=>{cancelAnimationFrame(rafRef.current);streamRef.current?.getTracks().forEach(t=>t.stop());landmarkerRef.current?.close();},[]);
   return <div className="camera-panel">
     <div className="camera-preview">
