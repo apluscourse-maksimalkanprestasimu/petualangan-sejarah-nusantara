@@ -36,6 +36,7 @@ export default function App(){
  const dwellStart=useRef(0);
  const lastTarget=useRef<string|null>(null);
  const locked=useRef(false);
+ const teamSwitched=useRef(false);
  const optionRefs=useRef<(HTMLButtonElement|null)[]>([]);
  const audioRef=useRef<AudioContext|null>(null);
  const current=deck[index];
@@ -48,7 +49,7 @@ export default function App(){
  const begin=()=>{
    const next=shuffle(questions).map(q=>({...q,options:shuffle(q.options)}));
    setDeck(next);setIndex(0);setScore(0);setRight(0);setWrong(0);setLevelScores([0,0,0,0,0]);setUnlocked(1);setChosen(null);setPractice(false);setSensorPoint(null);setPhase("levelIntro");locked.current=false;
-   setTeams(t=>t.map(x=>({...x,score:0})));setActiveTeam(0);
+   setTeams(t=>t.map(x=>({...x,score:0})));setActiveTeam(0);teamSwitched.current=false;
  };
  const beginPractice=()=>{begin();setPractice(true);};
  const answer=(option:string)=>{
@@ -64,7 +65,8 @@ export default function App(){
    if(deck[nextIndex].level!==current.level){setUnlocked(deck[nextIndex].level);setIndex(nextIndex);setPhase("levelIntro");}
    else {setIndex(nextIndex);setChosen(null);setPhase("playing");}
    locked.current=false;lastTarget.current=null;dwellStart.current=0;setTarget(null);setHold(0);
-   if(mode==="class")setActiveTeam(t=>1-t);
+   if(mode==="class"&&!teamSwitched.current)setActiveTeam(t=>1-t);
+   teamSwitched.current=false;
  };
  const startLevel=()=>{setChosen(null);setPhase("playing");locked.current=false;};
  const hitTest=(point:{x:number;y:number})=>{
@@ -119,9 +121,9 @@ export default function App(){
     <div className="bee-options">{current.options.map((opt,i)=><button key={opt} ref={el=>{optionRefs.current[i]=el;}} className={`bee-option ${target===String(i)&&phase==="playing"?"targeted":""} ${phase==="feedback"&&opt===current.answer?"is-correct":""} ${phase==="feedback"&&chosen===opt&&!correct?"is-wrong":""}`} onClick={()=>{if(practice)answer(opt);}} disabled={phase==="feedback"||(!practice&&!sensorPoint&&false)}><div className="bee-face">🐝</div><span className="option-letter">{String.fromCharCode(65+i)}</span><b>{opt}</b>{target===String(i)&&phase==="playing"&&<div className="dwell-ring" style={{"--progress":hold} as React.CSSProperties}><span>TAHAN</span></div>}</button>)}</div>
     {phase==="feedback"&&<div className={correct?"feedback-banner success":"feedback-banner gentle"}><div className="feedback-icon">{correct?"🌟":"💡"}</div><div><b>{correct?"Hebat! Jawabanmu benar!":"Belum tepat. Ayo pelajari penjelasannya!"}</b><p>Jawaban benar: <strong>{current.answer}</strong>. {current.explanation}</p></div><span className="feedback-points">{correct?"+100":"0"} POIN</span></div>}
     {phase==="playing"&&<div className="sensor-instruction"><span>☝️</span>{practice?"Mode latihan: pilih jawaban dengan klik atau sentuh.":"Arahkan telunjuk dan tahan pada lebah selama "+(dwell/1000).toFixed(1)+" detik."}</div>}
-    {phase==="feedback"&&<div className="auto-next">Misi berlanjut dalam beberapa saat…</div>}
+    {phase==="feedback"&&<div className="feedback-controls">{mode==="class"&&<button className="btn btn-outline" onClick={()=>{setActiveTeam(t=>1-t);teamSwitched.current=true;}}>↔ Ganti Tim</button>}<button className="btn btn-primary" onClick={nextQuestion}>Soal Berikutnya →</button><span>Misi berlanjut otomatis dalam beberapa saat…</span></div>}
    </section>}
-  {phase==="results"&&<section className="results-screen"><div className="trophy">🏆</div><div className="eyebrow">EKSPEDISI SELESAI</div><h2>Penjaga Sejarah Nusantara!</h2><p className="result-lead">Kamu telah menuntaskan lima misi sejarah. Terus jaga semangat belajar dan cinta tanah air!</p>{mode==="class"?<h3 className="winner">{teamWinner}</h3>:<label className="student-name">Nama penjelajah<input value={name} onChange={e=>setName(e.target.value)}/></label>}<div className="result-stats"><div><small>TOTAL POIN</small><b>{mode==="class"?totalScore:score}</b></div><div><small>JAWABAN BENAR</small><b>{right}/15</b></div><div><small>KETEPATAN</small><b>{percentage}%</b></div><div><small>PERLU DIPELAJARI</small><b>{wrong}</b></div></div><div className="badge-list">{badges.map((b,i)=><span key={b} className={i<Math.ceil(right/3)?"badge-earned":"badge-locked"}>{i<Math.ceil(right/3)?"🏅":"🔒"} {b}</span>)}</div><div className="result-actions"><button className="btn btn-primary" onClick={()=>window.print()}>🖨️ Cetak Piagam</button><button className="btn btn-outline" onClick={begin}>↻ Main Lagi</button><button className="btn btn-ghost" onClick={restart}>Kembali ke Beranda</button></div><div className="certificate-print"><h1>PIAGAM PENJELAJAH SEJARAH</h1><h2>{mode==="class"?teamWinner:name}</h2><p>Telah menyelesaikan Petualangan Sejarah Nusantara</p><h3>{mode==="class"?totalScore:score} POIN · {right} JAWABAN BENAR</h3><p>Terus belajar, bersatu, dan cintai Indonesia!</p></div></section>}
+  {phase==="results"&&<section className="results-screen"><div className="trophy">🏆</div><div className="eyebrow">EKSPEDISI SELESAI</div><h2>Penjaga Sejarah Nusantara!</h2><p className="result-lead">Kamu telah menuntaskan lima misi sejarah. Terus jaga semangat belajar dan cinta tanah air!</p>{mode==="class"?<h3 className="winner">{teamWinner}</h3>:<label className="student-name">Nama penjelajah<input value={name} onChange={e=>setName(e.target.value)}/></label>}<div className="result-stats"><div><small>TOTAL POIN</small><b>{mode==="class"?totalScore:score}</b></div><div><small>JAWABAN BENAR</small><b>{right}/15</b></div><div><small>KETEPATAN</small><b>{percentage}%</b></div><div><small>PERLU DIPELAJARI</small><b>{wrong}</b></div></div><div className="level-result-list">{levels.map((l,i)=><span key={l.id}>{l.icon} {l.tag}: <b>{levelScores[i]}</b> poin</span>)}</div><div className="badge-list">{badges.map((b,i)=><span key={b} className={i<Math.ceil(right/3)?"badge-earned":"badge-locked"}>{i<Math.ceil(right/3)?"🏅":"🔒"} {b}</span>)}</div><div className="result-actions"><button className="btn btn-primary" onClick={()=>window.print()}>🖨️ Cetak Piagam</button><button className="btn btn-outline" onClick={begin}>↻ Main Lagi</button><button className="btn btn-ghost" onClick={restart}>Kembali ke Beranda</button></div><div className="certificate-print"><h1>PIAGAM PENJELAJAH SEJARAH</h1><h2>{mode==="class"?teamWinner:name}</h2><p>Telah menyelesaikan Petualangan Sejarah Nusantara</p><h3>{mode==="class"?totalScore:score} POIN · {right} JAWABAN BENAR</h3><p>Terus belajar, bersatu, dan cintai Indonesia!</p></div></section>}
   {diagnostics&&<aside className="diagnostics"><div className="diag-head"><b>🛠 DIAGNOSTIK GURU</b><button onClick={()=>setDiagnostics(false)}>✕</button></div><p>Status kamera: <b>{sensorStatus}</b></p><p>Model: <b>MediaPipe Hand Landmarker</b></p><p>Deteksi tangan: <b>{sensorPoint?"Terdeteksi":"Belum terdeteksi"}</b></p><p>Koordinat telunjuk: <b>{sensorPoint?`${sensorPoint.x.toFixed(3)}, ${sensorPoint.y.toFixed(3)}`:"—"}</b></p><p>Target: <b>{target===null?"Tidak ada":String.fromCharCode(65+Number(target))}</b></p><p>Progres tahan: <b>{Math.round(hold*100)}%</b></p><p>Mode: <b>{practice?"Latihan tanpa kamera":mode==="class"?"Tantangan kelas":"Individu"}</b></p></aside>}
   {sensorPoint&&phase==="playing"&&!practice&&<div className="finger-cursor" style={cursorStyle}><span/></div>}
   <footer className="footer"><span>🇮🇩 BELAJAR SEJARAH · MENJAGA INGATAN NUSANTARA</span><span>DIRANCANG UNTUK PEMBELAJARAN KELAS VI</span></footer>
