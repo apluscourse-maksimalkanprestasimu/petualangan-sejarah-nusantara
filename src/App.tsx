@@ -10,7 +10,6 @@ const badges=["Penjelajah Pemula","Ahli VOC","Penakluk Misi Tanam Paksa","Cendek
 export default function App(){
  const [phase,setPhase]=useState<Phase>("home");
  const [mode,setMode]=useState<Mode>("individual");
- const [cameraEnabled,setCameraEnabled]=useState(false);
  const [sensorPoint,setSensorPoint]=useState<{x:number;y:number}|null>(null);
  const [sensorStatus,setSensorStatus]=useState("Kamera belum aktif");
  const [cameraReset,setCameraReset]=useState(0);
@@ -77,7 +76,7 @@ export default function App(){
    setHold(Math.min(1,elapsed/dwell));
    if(elapsed>=dwell){const selected=current?.options[Number(found)];if(selected)answer(selected);dwellStart.current=0;}
  };
- const pointCallback=useCallback((p:{x:number;y:number}|null)=>{setSensorPoint(p);if(p&&phase==="playing"&&!locked.current)hitTest(p);else if(!p){setTarget(null);setHold(0);dwellStart.current=0;}},[phase,dwell,current]);
+ const pointCallback=useCallback((p:{x:number;y:number}|null)=>{const adjusted=p?{x:Math.max(0,Math.min(1,.5+(p.x-.5)*sensitivity)),y:Math.max(0,Math.min(1,.5+(p.y-.5)*sensitivity))}:null;setSensorPoint(adjusted);if(adjusted&&phase==="playing"&&!locked.current)hitTest(adjusted);else if(!adjusted){setTarget(null);setHold(0);dwellStart.current=0;}},[phase,dwell,current,sensitivity]);
  useEffect(()=>{if(phase!=="feedback")return;const id=window.setTimeout(nextQuestion,2600);return()=>window.clearTimeout(id);},[phase,index]);
  const restart=()=>{setPhase("home");setSensorPoint(null);setCameraReset(v=>v+1);setDeck([]);setChosen(null);locked.current=false;};
  const cursorStyle=sensorPoint?{left:`${sensorPoint.x*100}%`,top:`${sensorPoint.y*100}%`}:undefined;
@@ -98,7 +97,7 @@ export default function App(){
     </div>
     <div className="hero-art"><div className="sun-disc"/><div className="map-blob"><span className="island island-a"/><span className="island island-b"/><span className="island island-c"/><span className="island island-d"/><span className="map-label">NUSANTARA</span></div><div className="ship">⛵</div><div className="explorer">🧑🏽‍✈️</div><div className="bee bee-one">🐝</div><div className="bee bee-two">🐝</div><div className="floating-coin">✦</div><div className="hero-caption"><b>Ekspedisi dimulai!</b><span>Siap jadi penjaga sejarah?</span></div></div>
    </section>}
-  {phase==="instructions"&&<section className="setup-screen">
+  <section className={phase==="instructions"?"setup-screen":"setup-screen setup-hidden"}>
     <div className="section-heading"><div className="eyebrow">SEBELUM BERANGKAT</div><h2>Siapkan penjelajahanmu!</h2><p>Gunakan jari telunjuk untuk memilih lebah jawaban. Tahan sebentar hingga lingkaran penuh.</p></div>
     <div className="setup-grid"><div className="setup-card"><div className="card-title">📷 SENSOR KAMERA</div><HandCamera key={cameraReset} enabled onPoint={pointCallback} onStatus={setSensorStatus}/><div className="sensor-status"><i className={sensorPoint?"status-live":""}/>{sensorStatus}</div></div>
     <div className="setup-card guide-card"><div className="card-title">🧭 CARA BERMAIN</div><div className="guide-step"><span>1</span><div><b>Aktifkan kamera</b><small>Izinkan browser mengakses kamera. Pastikan tangan terlihat.</small></div></div><div className="guide-step"><span>2</span><div><b>Arahkan ujung telunjuk</b><small>Gerakkan jari ke lebah A, B, atau C pada layar.</small></div></div><div className="guide-step"><span>3</span><div><b>Tahan sampai lingkaran penuh</b><small>Pilihan akan otomatis terpilih setelah sekitar satu detik.</small></div></div><div className="guide-step"><span>4</span><div><b>Kumpulkan bintang</b><small>Jawaban benar bernilai 100 poin. Pelajari penjelasan setiap soal.</small></div></div>
@@ -106,7 +105,7 @@ export default function App(){
      <div className="setting-row"><label>Sensitivitas <b>{sensitivity===1?"Normal":sensitivity===1.3?"Tinggi":"Rendah"}</b></label><input type="range" min=".7" max="1.3" step=".3" value={sensitivity} onChange={e=>setSensitivity(Number(e.target.value))}/></div>
     </div></div>
     <div className="setup-footer"><button className="btn btn-ghost" onClick={()=>setPhase("home")}>← Kembali</button><button className="btn btn-outline" onClick={beginPractice}>Coba mode latihan tanpa kamera</button><button className="btn btn-primary" onClick={()=>{if(sensorStatus.startsWith("Kamera aktif")||sensorStatus.startsWith("Sensor siap")||sensorStatus.startsWith("Tangan terdeteksi"))begin();else alert("Aktifkan kamera terlebih dahulu, atau pilih mode latihan tanpa kamera.");}}>KAMERA SIAP · MULAI →</button></div>
-   </section>}
+   </section>
   {phase==="levelIntro"&&<section className="level-intro"><div className="level-map">{levels.map((l,i)=><div key={l.id} className={i+1<=unlocked?"map-stop open":"map-stop"}><span>{i+1<=unlocked?l.icon:"🔒"}</span><small>{l.place}</small></div>)}</div><div className="level-emblem">{level.icon}</div><div className="eyebrow">LEVEL {currentLevel} · DARI 5 MISI</div><h2>{level.title}</h2><p>{level.desc}</p><div className="mission-count">🐝 3 pertanyaan · ⭐ 300 poin tersedia</div><button className="btn btn-primary btn-large" onClick={startLevel}>MULAI MISI <span>→</span></button></section>}
   {(phase==="playing"||phase==="feedback")&&current&&<section className="game-screen">
     <div className="game-head"><div><span className="eyebrow">LEVEL {currentLevel} · {level.tag.toUpperCase()}</span><h2>{level.title}</h2></div><div className="game-score"><small>{mode==="class"?teams[activeTeam].name:"SKOR SEMENTARA"}</small><b>⭐ {mode==="class"?teams[activeTeam].score:score}</b></div></div>
