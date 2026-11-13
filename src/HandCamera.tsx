@@ -8,6 +8,10 @@ export default function HandCamera({onPoint,onStatus,enabled,mirrored=true,shoul
   const landmarkerRef=useRef<HandLandmarker|null>(null);
   const rafRef=useRef<number>(0);
   const lastVideoTime=useRef(-1);
+  const onPointRef=useRef(onPoint);
+  const onStatusRef=useRef(onStatus);
+  onPointRef.current=onPoint;
+  onStatusRef.current=onStatus;
   const [cameraError,setCameraError]=useState("");
   const [loading,setLoading]=useState(false);
   const [cameraOn,setCameraOn]=useState(false);
@@ -19,8 +23,8 @@ export default function HandCamera({onPoint,onStatus,enabled,mirrored=true,shoul
     streamRef.current?.getTracks().forEach(track=>track.stop());
     streamRef.current=null;
     if(videoRef.current) videoRef.current.srcObject=null;
-    setCameraOn(false); setHandFound(false); onPoint(null);
-    onStatus("Kamera dimatikan");
+    setCameraOn(false); setHandFound(false); onPointRef.current(null);
+    onStatusRef.current("Kamera dimatikan");
   },[onPoint,onStatus]);
 
   const start=useCallback(async()=>{
@@ -32,7 +36,7 @@ export default function HandCamera({onPoint,onStatus,enabled,mirrored=true,shoul
       if(!videoRef.current) throw new Error("Elemen video belum siap.");
       videoRef.current.srcObject=stream;
       await videoRef.current.play();
-      setCameraOn(true); onStatus("Kamera aktif · memuat sensor tangan…");
+      setCameraOn(true); onStatusRef.current("Kamera aktif · memuat sensor tangan…");
       if(!landmarkerRef.current) {
         const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
         landmarkerRef.current=await HandLandmarker.createFromOptions(vision,{
@@ -40,7 +44,7 @@ export default function HandCamera({onPoint,onStatus,enabled,mirrored=true,shoul
           runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.55,minHandPresenceConfidence:.55,minTrackingConfidence:.5
         });
       }
-      setModelReady(true); onStatus("Sensor siap · arahkan telunjuk ke kamera");
+      setModelReady(true); onStatusRef.current("Sensor siap · arahkan telunjuk ke kamera");
       lastVideoTime.current=-1;
       const track=()=>{
         const video=videoRef.current, detector=landmarkerRef.current;
@@ -50,10 +54,10 @@ export default function HandCamera({onPoint,onStatus,enabled,mirrored=true,shoul
           const tip=result.landmarks?.[0]?.[8];
           if(tip) {
             setHandFound(true);
-            onPoint({x:mirrored?1-tip.x:tip.x,y:tip.y});
-            onStatus("Tangan terdeteksi · arahkan ujung telunjuk ke lebah");
+            onPointRef.current({x:mirrored?1-tip.x:tip.x,y:tip.y});
+            onStatusRef.current("Tangan terdeteksi · arahkan ujung telunjuk ke lebah");
           } else {
-            setHandFound(false); onPoint(null); onStatus("Arahkan tangan ke depan kamera");
+            setHandFound(false); onPointRef.current(null); onStatusRef.current("Arahkan tangan ke depan kamera");
           }
         }
         rafRef.current=requestAnimationFrame(track);
@@ -61,7 +65,7 @@ export default function HandCamera({onPoint,onStatus,enabled,mirrored=true,shoul
       rafRef.current=requestAnimationFrame(track);
     } catch(error) {
       const message=error instanceof Error?error.message:"Kamera atau model sensor gagal diaktifkan.";
-      setCameraError(message); onStatus("Kamera belum aktif"); stop();
+      setCameraError(message); onStatusRef.current("Kamera belum aktif"); stop();
     } finally { setLoading(false); }
   },[mirrored,onPoint,onStatus,stop]);
 
