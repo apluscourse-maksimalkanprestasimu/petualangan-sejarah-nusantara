@@ -83,7 +83,7 @@ export default function App(){
  };
  const pointCallback=useCallback((p:{x:number;y:number}|null)=>{const adjusted=p?{x:Math.max(0,Math.min(1,.5+(p.x-.5)*sensitivity)),y:Math.max(0,Math.min(1,.5+(p.y-.5)*sensitivity))}:null;setSensorPoint(adjusted);if(adjusted&&phase==="playing"&&!locked.current)hitTest(adjusted);else if(!adjusted){setTarget(null);setHold(0);dwellStart.current=0;}},[phase,dwell,current,sensitivity]);
  useEffect(()=>{if(phase!=="feedback")return;const id=window.setTimeout(nextQuestion,2600);return()=>window.clearTimeout(id);},[phase,index]);
- const handleSensorStatus=(s:string)=>{setSensorStatus(s);if(s.includes("Kamera aktif")||s.includes("Sensor siap")||s.includes("Tangan terdeteksi")||s.includes("Arahkan tangan ke depan kamera"))setCameraReady(true);if(s==="Kamera dimatikan"||s==="Kamera belum aktif")setCameraReady(false);};
+ const handleSensorStatus=(s:string)=>{setSensorStatus(s);if(s.includes("Sensor siap")||s.includes("Tangan terdeteksi")||s.includes("Arahkan tangan ke depan kamera"))setCameraReady(true);if(s==="Kamera dimatikan"||s==="Kamera belum aktif")setCameraReady(false);};
  const restart=()=>{setCameraReady(false);setPhase("home");setSensorPoint(null);setCameraReset(v=>v+1);setDeck([]);setChosen(null);locked.current=false;};
  const cursorStyle=sensorPoint?{left:`${sensorPoint.x*100}%`,top:`${sensorPoint.y*100}%`}:undefined;
  const level=levels[currentLevel-1];
