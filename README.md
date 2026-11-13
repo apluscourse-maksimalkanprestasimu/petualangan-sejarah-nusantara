@@ -45,3 +45,16 @@ MediaPipe WASM dan model Hand Landmarker dimuat dari CDN saat kamera diaktifkan;
 
 ## Batasan pengujian
 Kode sumber telah ditambahkan ke repositori. Kamera dan deteksi tangan perlu diuji pada perangkat fisik dengan webcam dan browser yang mendukung WebAssembly/WebGL. Hasil kompilasi belum dapat dinyatakan lulus sebelum `npm install` dan `npm run build` dijalankan pada lingkungan Node.js.
+
+
+## Publikasi online (GitHub Pages)
+
+Workflow GitHub Actions membangun dan menerbitkan aplikasi secara otomatis setiap ada push ke branch `main`.
+
+- URL game: https://apluscourse-maksimalkanprestasimu.github.io/petualangan-sejarah-nusantara/
+- Status deployment: tab **Actions** pada repositori.
+- Setelah commit pertama workflow selesai, buka URL game di atas. Publikasi pertama mungkin memerlukan beberapa menit.
+- Pull request menjalankan pemeriksaan build, tetapi tidak menerbitkan situs.
+- Kamera membutuhkan HTTPS dan izin kamera dari browser. Pemrosesan gambar dilakukan lokal di perangkat.
+
+Jika deployment gagal karena Pages belum diaktifkan, buka **Settings → Pages**, pilih **GitHub Actions** pada bagian Build and deployment, lalu jalankan ulang workflow.
